@@ -1,0 +1,45 @@
+name: Deploy Worker
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'packages/worker/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Workers
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: 'packages/worker'
+          command: deploy
+
+      - name: Deployment Summary
+        run: |
+          echo "## ✅ Worker 部署成功！" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Worker 已成功部署到 Cloudflare。" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 下一步" >> $GITHUB_STEP_SUMMARY
+          echo "1. 访问 [Cloudflare Dashboard](https://dash.cloudflare.com/) 查看 Worker" >> $GITHUB_STEP_SUMMARY
+          echo "2. 确认环境变量已正确配置" >> $GITHUB_STEP_SUMMARY
+          echo "3. 测试 GraphQL API 是否正常工作" >> $GITHUB_STEP_SUMMARY

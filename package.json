@@ -1,0 +1,29 @@
+{
+  "name": "web3-journey-80",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Pages + Workers + GraphQL Project",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:worker": "npm run dev --workspace=worker",
+    "dev": "npm run dev:worker & npm run dev:frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:worker": "npm run build --workspace=worker",
+    "build": "npm run build:worker && npm run build:frontend",
+    "deploy:frontend": "npm run deploy --workspace=frontend",
+    "deploy:worker": "npm run deploy --workspace=worker",
+    "deploy": "npm run deploy:worker && npm run deploy:frontend"
+  },
+  "keywords": [
+    "cloudflare",
+    "pages",
+    "workers",
+    "graphql",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT"
+}

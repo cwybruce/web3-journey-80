@@ -1,0 +1,17 @@
+name = "web3-journey-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# 环境变量配置
+# 在部署时通过 Cloudflare Dashboard 设置以下 secrets:
+# - DEEPSEEK_API_KEY 或 OPENAI_API_KEY
+
+[vars]
+# 默认使用 DeepSeek，也可以设置为 "openai"
+AI_PROVIDER = "deepseek"
+
+# 开发环境配置
+# 在本地创建 .dev.vars 文件来设置开发环境的 secrets
+# 示例:
+# DEEPSEEK_API_KEY=your_api_key_here
+# OPENAI_API_KEY=your_api_key_here
