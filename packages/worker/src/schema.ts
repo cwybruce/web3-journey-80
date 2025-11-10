@@ -13,7 +13,22 @@ export const schema = createSchema<GraphQLContext>({
       """
       与 AI 对话
       """
-      chat(message: String!): ChatResponse!
+      chat(message: String!, provider: AIProvider): ChatResponse!
+    }
+
+    """
+    AI 提供商选择
+    """
+    enum AIProvider {
+      """
+      DeepSeek AI（性价比高，中文友好）
+      """
+      DEEPSEEK
+
+      """
+      OpenAI GPT（性能优秀，生态成熟）
+      """
+      OPENAI
     }
 
     type ChatResponse {
@@ -28,6 +43,11 @@ export const schema = createSchema<GraphQLContext>({
       model: String!
 
       """
+      实际使用的 AI 提供商
+      """
+      provider: String!
+
+      """
       响应时间戳
       """
       timestamp: String!
@@ -39,31 +59,43 @@ export const schema = createSchema<GraphQLContext>({
         return `你好, ${name}! 欢迎使用 Cloudflare Workers + GraphQL 🚀`
       },
 
-      chat: async (_, { message }, context: GraphQLContext): Promise<ChatResponse> => {
+      chat: async (_, { message, provider }, context: GraphQLContext): Promise<ChatResponse> => {
         const { env } = context
-        const provider = env.AI_PROVIDER || 'deepseek'
+
+        // 如果用户指定了 provider，使用指定的；否则使用环境变量配置的，默认为 deepseek
+        const selectedProvider = provider?.toLowerCase() || env.AI_PROVIDER || 'deepseek'
 
         try {
           let response: string
           let model: string
+          let actualProvider: string
 
-          if (provider === 'openai' && env.OPENAI_API_KEY) {
+          if (selectedProvider === 'openai') {
             // 使用 OpenAI
+            if (!env.OPENAI_API_KEY) {
+              throw new Error('未配置 OPENAI_API_KEY。请在环境变量中设置 OpenAI API Key')
+            }
             const result = await callOpenAI(message, env.OPENAI_API_KEY)
             response = result.response
             model = result.model
-          } else if (env.DEEPSEEK_API_KEY) {
-            // 使用 DeepSeek (默认)
+            actualProvider = 'OpenAI'
+          } else if (selectedProvider === 'deepseek') {
+            // 使用 DeepSeek
+            if (!env.DEEPSEEK_API_KEY) {
+              throw new Error('未配置 DEEPSEEK_API_KEY。请在环境变量中设置 DeepSeek API Key')
+            }
             const result = await callDeepSeek(message, env.DEEPSEEK_API_KEY)
             response = result.response
             model = result.model
+            actualProvider = 'DeepSeek'
           } else {
-            throw new Error('未配置 API Key。请在环境变量中设置 DEEPSEEK_API_KEY 或 OPENAI_API_KEY')
+            throw new Error(`不支持的 AI 提供商: ${selectedProvider}。请选择 deepseek 或 openai`)
           }
 
           return {
             response,
             model,
+            provider: actualProvider,
             timestamp: new Date().toISOString(),
           }
         } catch (error) {

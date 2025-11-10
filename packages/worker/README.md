@@ -50,13 +50,46 @@ query {
 
 #### chat
 
-与 AI 对话。
+与 AI 对话，支持动态选择 AI Provider。
+
+**参数:**
+- `message` (String!, 必需) - 用户消息
+- `provider` (AIProvider, 可选) - AI 提供商，可选值：`DEEPSEEK`、`OPENAI`。不传则使用环境变量配置的默认值
+
+**示例 1: 使用默认 Provider**
 
 ```graphql
 query {
   chat(message: "你好，AI!") {
     response
     model
+    provider
+    timestamp
+  }
+}
+```
+
+**示例 2: 指定使用 DeepSeek**
+
+```graphql
+query {
+  chat(message: "你好", provider: DEEPSEEK) {
+    response
+    model
+    provider
+    timestamp
+  }
+}
+```
+
+**示例 3: 指定使用 OpenAI**
+
+```graphql
+query {
+  chat(message: "Hello", provider: OPENAI) {
+    response
+    model
+    provider
     timestamp
   }
 }
@@ -69,6 +102,7 @@ query {
     "chat": {
       "response": "你好！很高兴见到你。有什么我可以帮助你的吗？",
       "model": "deepseek-chat",
+      "provider": "DeepSeek",
       "timestamp": "2024-01-15T10:30:00.000Z"
     }
   }
@@ -86,9 +120,11 @@ query {
 
 ### 可选
 
-- `AI_PROVIDER` - AI 提供商选择，可选值：
+- `AI_PROVIDER` - 默认 AI 提供商选择（当前端未指定时使用），可选值：
   - `deepseek` (默认)
   - `openai`
+
+**注意:** 前端现在可以通过 GraphQL 参数动态选择 AI Provider，无需修改环境变量
 
 ## 部署
 
@@ -133,11 +169,18 @@ curl -X POST http://localhost:8787/graphql \
     "query": "query { hello(name: \"World\") }"
   }'
 
-# Chat 查询
+# Chat 查询（使用默认 Provider）
 curl -X POST http://localhost:8787/graphql \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "query { chat(message: \"你好\") { response model timestamp } }"
+    "query": "query { chat(message: \"你好\") { response model provider timestamp } }"
+  }'
+
+# Chat 查询（指定使用 OpenAI）
+curl -X POST http://localhost:8787/graphql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query { chat(message: \"Hello\", provider: OPENAI) { response model provider timestamp } }"
   }'
 ```
 
@@ -151,16 +194,18 @@ const response = await fetch('https://your-worker.workers.dev/graphql', {
   },
   body: JSON.stringify({
     query: `
-      query Chat($message: String!) {
-        chat(message: $message) {
+      query Chat($message: String!, $provider: AIProvider) {
+        chat(message: $message, provider: $provider) {
           response
           model
+          provider
           timestamp
         }
       }
     `,
     variables: {
-      message: '你好，AI!'
+      message: '你好，AI!',
+      provider: 'DEEPSEEK'  // 或 'OPENAI'
     }
   })
 });

@@ -20,6 +20,7 @@ export interface GraphQLContext {
 export interface ChatResponse {
   response: string
   model: string
+  provider: string
   timestamp: string
 }
 

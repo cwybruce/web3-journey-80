@@ -10,19 +10,23 @@ const HELLO_QUERY = gql`
 `
 
 const CHAT_QUERY = gql`
-  query Chat($message: String!) {
-    chat(message: $message) {
+  query Chat($message: String!, $provider: AIProvider) {
+    chat(message: $message, provider: $provider) {
       response
       model
+      provider
       timestamp
     }
   }
 `
 
+type AIProvider = 'DEEPSEEK' | 'OPENAI'
+
 function App() {
   const [name, setName] = useState('World')
   const [message, setMessage] = useState('')
-  const [chatHistory, setChatHistory] = useState<Array<{ role: string; content: string }>>([])
+  const [aiProvider, setAiProvider] = useState<AIProvider>('DEEPSEEK')
+  const [chatHistory, setChatHistory] = useState<Array<{ role: string; content: string; provider?: string; model?: string }>>([])
 
   // Hello 查询
   const { data: helloData, loading: helloLoading } = useQuery(HELLO_QUERY, {
@@ -36,7 +40,7 @@ function App() {
         setChatHistory(prev => [
           ...prev,
           { role: 'user', content: message },
-          { role: 'assistant', content: data.chat.response }
+          { role: 'assistant', content: data.chat.response, provider: data.chat.provider, model: data.chat.model }
         ])
         setMessage('')
       }
@@ -46,7 +50,7 @@ function App() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
     if (message.trim()) {
-      executeChat({ variables: { message } })
+      executeChat({ variables: { message, provider: aiProvider } })
     }
   }
 
@@ -81,7 +85,21 @@ function App() {
 
         {/* AI 聊天区域 */}
         <section className="section">
-          <h2>🤖 AI 聊天（DeepSeek/OpenAI）</h2>
+          <div className="section-header">
+            <h2>🤖 AI 聊天</h2>
+            <div className="ai-selector">
+              <label htmlFor="ai-provider">选择 AI:</label>
+              <select
+                id="ai-provider"
+                value={aiProvider}
+                onChange={(e) => setAiProvider(e.target.value as AIProvider)}
+                className="select"
+              >
+                <option value="DEEPSEEK">🚀 DeepSeek（性价比高，中文友好）</option>
+                <option value="OPENAI">🤖 OpenAI GPT（性能优秀，生态成熟）</option>
+              </select>
+            </div>
+          </div>
 
           <div className="chat-container">
             <div className="chat-messages">
@@ -90,14 +108,23 @@ function App() {
               ) : (
                 chatHistory.map((msg, idx) => (
                   <div key={idx} className={`message ${msg.role}`}>
-                    <strong>{msg.role === 'user' ? '你' : 'AI'}:</strong>
+                    <div className="message-header">
+                      <strong>{msg.role === 'user' ? '你' : 'AI'}</strong>
+                      {msg.provider && (
+                        <span className="provider-badge" title={msg.model}>
+                          {msg.provider}
+                        </span>
+                      )}
+                    </div>
                     <p>{msg.content}</p>
                   </div>
                 ))
               )}
               {chatLoading && (
                 <div className="message assistant">
-                  <strong>AI:</strong>
+                  <div className="message-header">
+                    <strong>AI</strong>
+                  </div>
                   <p className="loading">思考中...</p>
                 </div>
               )}
@@ -130,7 +157,7 @@ function App() {
             <li><strong>前端:</strong> React + TypeScript + Vite</li>
             <li><strong>API:</strong> GraphQL (Apollo Client)</li>
             <li><strong>后端:</strong> Cloudflare Workers</li>
-            <li><strong>AI:</strong> DeepSeek / OpenAI</li>
+            <li><strong>AI:</strong> DeepSeek / OpenAI（可切换）</li>
             <li><strong>部署:</strong> Cloudflare Pages + Workers</li>
           </ul>
         </section>

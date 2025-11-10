@@ -18,11 +18,14 @@ web3-journey-80/
 ✅ **前端 (Cloudflare Pages)**
 - React + TypeScript + Vite
 - GraphQL Client (Apollo Client)
+- AI Provider 选择器（可在 DeepSeek 和 OpenAI 之间切换）
+- 实时显示 AI 模型信息
 - 自动 CI/CD 部署
 
 ✅ **后端 (Cloudflare Workers)**
 - GraphQL API (使用 graphql-yoga)
 - DeepSeek / OpenAI API 集成
+- 支持前端动态选择 AI Provider
 - 边缘计算性能
 
 ## 开发指南
@@ -103,14 +106,37 @@ npm run deploy
 ### GraphQL Query 示例
 
 ```graphql
+# Hello 查询
 query {
   hello(name: "World")
 }
 
+# AI 聊天（使用默认 Provider）
 query {
   chat(message: "Hello, AI!") {
     response
     model
+    provider
+    timestamp
+  }
+}
+
+# AI 聊天（指定使用 DeepSeek）
+query {
+  chat(message: "你好", provider: DEEPSEEK) {
+    response
+    model
+    provider
+    timestamp
+  }
+}
+
+# AI 聊天（指定使用 OpenAI）
+query {
+  chat(message: "Hello", provider: OPENAI) {
+    response
+    model
+    provider
     timestamp
   }
 }
@@ -122,20 +148,35 @@ query {
 import { gql, useQuery } from '@apollo/client';
 
 const CHAT_QUERY = gql`
-  query Chat($message: String!) {
-    chat(message: $message) {
+  query Chat($message: String!, $provider: AIProvider) {
+    chat(message: $message, provider: $provider) {
       response
       model
+      provider
+      timestamp
     }
   }
 `;
 
 function ChatComponent() {
+  const [aiProvider, setAiProvider] = useState('DEEPSEEK');
+
   const { data, loading } = useQuery(CHAT_QUERY, {
-    variables: { message: 'Hello!' }
+    variables: {
+      message: 'Hello!',
+      provider: aiProvider  // 动态选择 AI Provider
+    }
   });
 
-  // ...
+  return (
+    <div>
+      <select onChange={(e) => setAiProvider(e.target.value)}>
+        <option value="DEEPSEEK">DeepSeek</option>
+        <option value="OPENAI">OpenAI</option>
+      </select>
+      {/* ... */}
+    </div>
+  );
 }
 ```
 
