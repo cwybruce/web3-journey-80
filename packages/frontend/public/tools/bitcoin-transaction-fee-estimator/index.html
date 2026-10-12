@@ -90,7 +90,7 @@ footer.site a{color:var(--muted)}
 
 <div class="wrap">
   <h1>Bitcoin Transaction Fee Estimator</h1>
-  <p class="lede">Check live network fee rates and calculate exactly what your BTC transaction will cost — in sats, BTC, and USD.</p>
+  <p class="lede">Check live network fee rates and estimate your BTC transaction cost — in sats, BTC, and USD.</p>
 
   <div class="tool">
     <h2>Fee calculator</h2>
@@ -111,13 +111,13 @@ footer.site a{color:var(--muted)}
       <button class="preset" data-vb="400">Complex · ~400 vB</button>
     </div>
     <div class="row">
-      <input type="number" id="customVb" min="50" max="100000" placeholder="Custom vBytes">
+      <input type="number" id="customVb" min="50" max="100000" step="1" placeholder="Custom vBytes" aria-label="Custom transaction size in virtual bytes">
       <span class="note" style="margin:0">1 input + 2 outputs (SegWit) ≈ 141 vB</span>
     </div>
 
     <label class="lbl">3. Fee rate</label>
     <div class="row">
-      <input type="range" id="rateSlider" min="1" max="200" value="10">
+      <input type="range" id="rateSlider" min="0.1" step="0.1" max="200" value="10" aria-label="Fee rate in satoshis per virtual byte">
       <div class="rate-display"><span id="rateVal">10</span> <small>sat/vB</small></div>
     </div>
 
@@ -125,7 +125,7 @@ footer.site a{color:var(--muted)}
       <div class="result-main">Estimated total fee</div>
       <div class="result-fee"><span id="feeSats">1,410</span> <small>sats</small></div>
       <div class="result-sub"><b id="feeBtc">0.00001410 BTC</b> ≈ <b id="feeUsd">$—</b> <span class="note" id="priceNote"></span></div>
-      <span class="confirm" id="confirmEst">Estimated confirmation: ~30 min</span>
+      <span class="confirm" id="confirmEst">Confirmation estimate unavailable until live rates load</span>
       <p class="note">Estimates use live mempool data when available and fall back to manual mode offline. Fees can change within minutes during congestion. Not financial advice.</p>
     </div>
   </div>
@@ -199,11 +199,11 @@ footer.site a{color:var(--muted)}
       customVb=document.getElementById('customVb'),priceNote=document.getElementById('priceNote'),
       liveDot=document.getElementById('liveDot'),liveLabel=document.getElementById('liveLabel'),
       tiers=document.querySelectorAll('#tiers .tier'),presets=document.querySelectorAll('#sizePresets .preset'),
-      vbytes=141,btcPrice=null,liveRates=null;
+      vbytes=141,btcPrice=null,liveRates=null,invalidSize=false;
 
   function fmt(n){return n.toLocaleString('en-US')}
   function estTime(rate){
-    if(!liveRates)return'~30 min';
+    if(!liveRates)return'unavailable — no live network data';
     if(rate>=liveRates.fast)return'~10 min (next block)';
     if(rate>=liveRates.medium)return'~30 min';
     if(rate>=liveRates.slow)return'~60 min';
@@ -211,43 +211,49 @@ footer.site a{color:var(--muted)}
     return'may take very long';
   }
   function calc(){
-    var rate=parseInt(slider.value,10);rateVal.textContent=rate;
-    var sats=vbytes*rate;
+    if(invalidSize){feeSats.textContent='—';feeBtc.textContent='—';feeUsd.textContent='—';priceNote.textContent='';confirmEst.textContent='Enter a whole transaction size from 50 to 100,000 vB';return;}
+    var rate=Number(slider.value);rateVal.textContent=rate;
+    var sats=Math.ceil(vbytes*rate);
     feeSats.textContent=fmt(sats);
     feeBtc.textContent=(sats/1e8).toFixed(8)+' BTC';
     if(btcPrice){feeUsd.textContent='$'+(sats/1e8*btcPrice).toFixed(2);priceNote.textContent='at $'+fmt(Math.round(btcPrice))+'/BTC';}
     else{feeUsd.textContent='$—';priceNote.textContent='(price offline — USD unavailable)';}
     confirmEst.textContent='Estimated confirmation: '+estTime(rate);
-    tiers.forEach(function(t){t.classList.toggle('active',parseInt(t.dataset.rate||'0',10)===rate&&t.dataset.rate);});
+    tiers.forEach(function(t){t.classList.toggle('active',Number(t.dataset.rate)===rate&&t.dataset.rate);});
   }
   slider.addEventListener('input',function(){tiers.forEach(function(t){t.classList.remove('active')});calc();});
   tiers.forEach(function(t){t.addEventListener('click',function(){if(t.dataset.rate){slider.value=t.dataset.rate;calc();}});});
   presets.forEach(function(p){p.addEventListener('click',function(){
     presets.forEach(function(x){x.classList.remove('active')});p.classList.add('active');
-    customVb.value='';vbytes=parseInt(p.dataset.vb,10);calc();});});
+    customVb.value='';invalidSize=false;vbytes=parseInt(p.dataset.vb,10);calc();});});
   customVb.addEventListener('input',function(){
-    var v=parseInt(customVb.value,10);
-    if(v>=50&&v<=100000){vbytes=v;presets.forEach(function(x){x.classList.remove('active')});calc();}});
+    var v=Number(customVb.value);
+    invalidSize=!Number.isSafeInteger(v)||v<50||v>100000;
+    if(!invalidSize){vbytes=v;presets.forEach(function(x){x.classList.remove('active')});}calc();});
 
   function setLive(rates){
+    if(!rates||!['fastestFee','halfHourFee','hourFee','economyFee'].every(function(k){return typeof rates[k]==='number'&&Number.isFinite(rates[k])&&rates[k]>0;}))throw new Error('Invalid fee rates');
     liveRates={fast:rates.fastestFee,medium:rates.halfHourFee,slow:rates.hourFee,economy:rates.economyFee};
+    slider.max=String(Math.max(200,rates.fastestFee,rates.halfHourFee,rates.hourFee,rates.economyFee));
     var map={fast:'fastestFee',medium:'halfHourFee',slow:'hourFee',economy:'economyFee'};
     tiers.forEach(function(t){
       var key=map[t.dataset.tier],v=rates[key];
       t.querySelector('.v').textContent=v;t.dataset.rate=v;
       if(t.dataset.tier==='medium'){t.classList.add('active');slider.value=v;}
     });
-    liveDot.classList.add('live');liveLabel.textContent='Live mempool data · updated just now';
+    liveDot.classList.add('live');liveLabel.textContent='Mempool rates loaded at '+new Date().toLocaleTimeString()+' · refresh for latest rates';
     calc();
   }
   function setManual(){
+    liveRates=null;liveDot.classList.remove('live');
     liveLabel.textContent='Live data unavailable — manual mode (drag the slider)';
     tiers.forEach(function(t){t.querySelector('.v').textContent='–';});
     calc();
   }
-  fetch('https://mempool.space/api/v1/fees/recommended').then(function(r){return r.json()}).then(setLive).catch(setManual);
-  fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
-    .then(function(r){return r.json()}).then(function(j){if(j.bitcoin&&j.bitcoin.usd){btcPrice=j.bitcoin.usd;calc();}}).catch(function(){});
+  function loadJson(url){return fetch(url,{signal:AbortSignal.timeout(8000)}).then(function(r){if(!r.ok)throw new Error('Data unavailable');return r.json();});}
+  loadJson('https://mempool.space/api/v1/fees/recommended').then(setLive).catch(setManual);
+  loadJson('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+    .then(function(j){if(j.bitcoin&&typeof j.bitcoin.usd==='number'&&Number.isFinite(j.bitcoin.usd)&&j.bitcoin.usd>0){btcPrice=j.bitcoin.usd;calc();}}).catch(function(){});
   calc();
 })();
 </script>
