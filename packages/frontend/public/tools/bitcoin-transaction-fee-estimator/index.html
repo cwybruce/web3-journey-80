@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitcoin Transaction Fee Estimator — Live sat/vB Rates & BTC Fee Calculator</title>
+<meta name="description" content="Estimate Bitcoin transaction fees in real time. Check live sat/vB fee rates, calculate your fee in sats, BTC and USD, and choose the right fee for how fast you need confirmation.">
+<link rel="canonical" href="https://web3btc.win/tools/bitcoin-transaction-fee-estimator/">
+<meta property="og:title" content="Bitcoin Transaction Fee Estimator — Live sat/vB Rates">
+<meta property="og:description" content="Check live Bitcoin network fee rates and calculate your transaction cost in sats, BTC and USD.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://web3btc.win/tools/bitcoin-transaction-fee-estimator/">
+<style>
+:root{--accent:#f7931a;--ink:#1a1a1a;--muted:#6b7280;--line:#e5e7eb;--bg:#ffffff;--card:#f9fafb;--green:#16a34a;--amber:#d97706}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.65;font-size:16px}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+header.site{border-bottom:1px solid var(--line);padding:14px 0;margin-bottom:32px}
+header.site a.logo{font-weight:700;font-size:18px;color:var(--ink);text-decoration:none}
+header.site a.logo span{color:var(--accent)}
+header.site nav{float:right;font-size:14px}
+header.site nav a{color:var(--muted);text-decoration:none;margin-left:18px}
+h1{font-size:30px;line-height:1.3;margin-bottom:10px;letter-spacing:-.5px}
+.lede{color:var(--muted);font-size:17px;margin-bottom:28px}
+.tool{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:36px}
+.tool h2{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:14px;font-weight:600}
+.status{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-bottom:14px}
+.dot{width:9px;height:9px;border-radius:50%;background:#9ca3af}
+.dot.live{background:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.18)}
+.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.tier{border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.tier:hover{border-color:var(--accent)}
+.tier.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(247,147,26,.25)}
+.tier .t-name{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.tier .t-rate{font-size:20px;font-weight:700;margin:2px 0}
+.tier .t-rate small{font-size:12px;font-weight:400;color:var(--muted)}
+.tier .t-time{font-size:12px;color:var(--muted)}
+label.lbl{display:block;font-size:14px;font-weight:600;margin:18px 0 8px}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.preset{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer}
+.preset.active{border-color:var(--accent);background:#fff7ed;font-weight:600}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+input[type=number]{border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:15px;width:150px}
+input[type=range]{flex:1;min-width:180px;accent-color:var(--accent)}
+.rate-display{font-size:26px;font-weight:700;min-width:110px;text-align:right}
+.rate-display small{font-size:14px;color:var(--muted);font-weight:400}
+.results{margin-top:22px;border-top:1px dashed var(--line);padding-top:20px}
+.result-main{font-size:15px;color:var(--muted)}
+.result-fee{font-size:38px;font-weight:800;letter-spacing:-1px;margin:4px 0}
+.result-fee small{font-size:18px;font-weight:600;color:var(--muted)}
+.result-sub{font-size:16px;margin-bottom:10px}
+.result-sub b{font-weight:700}
+.confirm{display:inline-block;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;border-radius:8px;padding:6px 14px;font-size:14px;font-weight:600;margin-top:6px}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+section.content h2{font-size:22px;margin:34px 0 12px;letter-spacing:-.3px}
+section.content h3{font-size:17px;margin:22px 0 8px}
+section.content p{margin-bottom:14px;color:#374151}
+section.content ul,section.content ol{margin:0 0 14px 22px;color:#374151}
+section.content li{margin-bottom:6px}
+.faq{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.faq summary{padding:14px 18px;cursor:pointer;font-weight:600;list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";float:right;color:var(--accent);font-size:20px;line-height:1}
+.faq[open] summary::after{content:"–"}
+.faq .a{padding:0 18px 16px;color:#374151;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0 18px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{background:var(--card);font-weight:600}
+footer.site{border-top:1px solid var(--line);margin-top:44px;padding:22px 0 40px;font-size:13px;color:var(--muted)}
+footer.site a{color:var(--muted)}
+@media(max-width:560px){.tiers{grid-template-columns:repeat(2,1fr)}h1{font-size:24px}.result-fee{font-size:30px}}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"How much is a Bitcoin transaction fee right now?","acceptedAnswer":{"@type":"Answer","text":"It changes with network congestion. Use the live estimator above — it pulls current recommended fee rates (in sat/vB) from the Bitcoin mempool and converts them to sats, BTC and USD for your transaction size."}},
+{"@type":"Question","name":"What is sat/vB?","acceptedAnswer":{"@type":"Answer","text":"sat/vB (satoshis per virtual byte) is how Bitcoin fees are priced. Your total fee = your transaction's size in virtual bytes × the fee rate you choose. Miners prioritize transactions offering a higher sat/vB rate."}},
+{"@type":"Question","name":"How can I pay a lower Bitcoin fee?","acceptedAnswer":{"@type":"Answer","text":"Send when the mempool is quiet (often weekends), use a SegWit (bc1q...) address which makes transactions smaller, consolidate UTXOs in advance, and choose the Economy fee tier if you are not in a hurry."}},
+{"@type":"Question","name":"What happens if my Bitcoin fee is too low?","acceptedAnswer":{"@type":"Answer","text":"Your transaction waits in the mempool until miners include it, which can take hours or days during congestion. Most wallets let you bump the fee later with RBF (Replace-by-Fee)."}},
+{"@type":"Question","name":"Does transaction size affect the fee more than the amount sent?","acceptedAnswer":{"@type":"Answer","text":"Yes. Bitcoin fees depend on data size (inputs and outputs), not on how much BTC you send. Sending $10 or $10 million in one simple transaction costs roughly the same fee."}}
+]}
+</script>
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="/">web3<span>btc</span>.win</a>
+    <nav><a href="/tools/bitcoin-transaction-fee-estimator/">Fee Estimator</a></nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>Bitcoin Transaction Fee Estimator</h1>
+  <p class="lede">Check live network fee rates and calculate exactly what your BTC transaction will cost — in sats, BTC, and USD.</p>
+
+  <div class="tool">
+    <h2>Fee calculator</h2>
+    <div class="status"><span class="dot" id="liveDot"></span><span id="liveLabel">Connecting to live network data…</span></div>
+
+    <label class="lbl">1. Pick a confirmation speed</label>
+    <div class="tiers" id="tiers">
+      <div class="tier" data-tier="fast"><div class="t-name">Fast</div><div class="t-rate"><span class="v">–</span> <small>sat/vB</small></div><div class="t-time">~10 min</div></div>
+      <div class="tier" data-tier="medium"><div class="t-name">Standard</div><div class="t-rate"><span class="v">–</span> <small>sat/vB</small></div><div class="t-time">~30 min</div></div>
+      <div class="tier" data-tier="slow"><div class="t-name">Slow</div><div class="t-rate"><span class="v">–</span> <small>sat/vB</small></div><div class="t-time">~60 min</div></div>
+      <div class="tier" data-tier="economy"><div class="t-name">Economy</div><div class="t-rate"><span class="v">–</span> <small>sat/vB</small></div><div class="t-time">no rush</div></div>
+    </div>
+
+    <label class="lbl">2. Transaction size</label>
+    <div class="presets" id="sizePresets">
+      <button class="preset active" data-vb="141">Simple · ~141 vB</button>
+      <button class="preset" data-vb="210">Typical · ~210 vB</button>
+      <button class="preset" data-vb="400">Complex · ~400 vB</button>
+    </div>
+    <div class="row">
+      <input type="number" id="customVb" min="50" max="100000" placeholder="Custom vBytes">
+      <span class="note" style="margin:0">1 input + 2 outputs (SegWit) ≈ 141 vB</span>
+    </div>
+
+    <label class="lbl">3. Fee rate</label>
+    <div class="row">
+      <input type="range" id="rateSlider" min="1" max="200" value="10">
+      <div class="rate-display"><span id="rateVal">10</span> <small>sat/vB</small></div>
+    </div>
+
+    <div class="results">
+      <div class="result-main">Estimated total fee</div>
+      <div class="result-fee"><span id="feeSats">1,410</span> <small>sats</small></div>
+      <div class="result-sub"><b id="feeBtc">0.00001410 BTC</b> ≈ <b id="feeUsd">$—</b> <span class="note" id="priceNote"></span></div>
+      <span class="confirm" id="confirmEst">Estimated confirmation: ~30 min</span>
+      <p class="note">Estimates use live mempool data when available and fall back to manual mode offline. Fees can change within minutes during congestion. Not financial advice.</p>
+    </div>
+  </div>
+
+  <section class="content">
+    <h2>How Bitcoin transaction fees work</h2>
+    <p>Bitcoin blocks have limited space (about 4M weight units), so miners pick the transactions that pay them the most per unit of space. Your fee is therefore <strong>not</strong> based on how much BTC you send — a $10 transfer and a $10 million transfer in the same simple transaction cost roughly the same fee. What matters is <strong>transaction size</strong> and <strong>how urgently</strong> you want it confirmed.</p>
+
+    <h3>What is sat/vB?</h3>
+    <p>Fees are priced in <strong>satoshis per virtual byte (sat/vB)</strong>. One satoshi is 0.00000001 BTC. Your total fee is simple:</p>
+    <p><strong>Total fee (sats) = transaction size (vB) × fee rate (sat/vB)</strong></p>
+    <p>A typical single payment from a SegWit wallet is about 141 vB. At 10 sat/vB that costs 1,410 sats — a few cents when the network is quiet, more when it is busy.</p>
+
+    <h3>Which fee tier should you choose?</h3>
+    <table>
+      <tr><th>Tier</th><th>When to use it</th><th>Typical wait</th></tr>
+      <tr><td><strong>Fast</strong></td><td>Exchange deposits, time-sensitive payments</td><td>~10 minutes (next block)</td></tr>
+      <tr><td><strong>Standard</strong></td><td>Everyday transfers</td><td>~30 minutes</td></tr>
+      <tr><td><strong>Slow</strong></td><td>You can wait an hour</td><td>~60 minutes</td></tr>
+      <tr><td><strong>Economy</strong></td><td>Consolidations, no deadline</td><td>Hours, sometimes longer</td></tr>
+    </table>
+
+    <h3>Why do fees spike?</h3>
+    <p>Fees spike when many people compete for the same block space — during big price moves, NFT-style inscription waves, or exchange withdrawal rushes. The mempool (the waiting room for unconfirmed transactions) fills up, and the minimum sat/vB needed to get into the next block climbs. Checking live rates before you send — like the estimator above — is the easiest way to avoid overpaying.</p>
+
+    <h3>How to pay less</h3>
+    <ul>
+      <li><strong>Use a SegWit address</strong> (starts with <code>bc1q</code>) — smaller transactions, lower fees.</li>
+      <li><strong>Send when the network is quiet</strong> — weekends and off-peak UTC hours are often cheaper.</li>
+      <li><strong>Batch your sends</strong> — one transaction with many outputs is cheaper than many transactions.</li>
+      <li><strong>Consolidate UTXOs early</strong> — many small inputs make future transactions big and expensive.</li>
+      <li><strong>Enable RBF</strong> (Replace-by-Fee) so you can bump the fee later instead of overpaying upfront.</li>
+    </ul>
+
+    <h2>Frequently asked questions</h2>
+    <details class="faq" open>
+      <summary>How much is a Bitcoin transaction fee right now?</summary>
+      <div class="a">It changes with network congestion. The estimator at the top of this page pulls current recommended fee rates (in sat/vB) from the Bitcoin mempool and converts them to sats, BTC and USD for your transaction size.</div>
+    </details>
+    <details class="faq">
+      <summary>What is sat/vB?</summary>
+      <div class="a">Satoshis per virtual byte — the unit Bitcoin fees are priced in. Total fee = transaction size in virtual bytes × the fee rate you choose. Miners prioritize transactions offering a higher sat/vB rate.</div>
+    </details>
+    <details class="faq">
+      <summary>How can I pay a lower Bitcoin fee?</summary>
+      <div class="a">Send when the mempool is quiet (often weekends), use a SegWit (bc1q...) address, consolidate UTXOs in advance, batch outputs, and choose the Economy tier if you are not in a hurry.</div>
+    </details>
+    <details class="faq">
+      <summary>What happens if my Bitcoin fee is too low?</summary>
+      <div class="a">Your transaction sits in the mempool until a miner includes it — hours or even days during heavy congestion. If your wallet supports RBF (Replace-by-Fee), you can bump the fee afterwards.</div>
+    </details>
+    <details class="faq">
+      <summary>Does the amount I send affect the fee?</summary>
+      <div class="a">No. Bitcoin fees depend on data size (number of inputs and outputs), not on the BTC value transferred. Sending $10 or $10 million in one simple transaction costs about the same.</div>
+    </details>
+  </section>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 web3btc.win · Fee estimates reflect mempool conditions at load time and can change within minutes. Not financial advice.<br>
+    Data: mempool.space (fee rates) · CoinGecko (BTC price). <a href="/tools/bitcoin-transaction-fee-estimator/">Bitcoin Fee Estimator</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var slider=document.getElementById('rateSlider'),rateVal=document.getElementById('rateVal'),
+      feeSats=document.getElementById('feeSats'),feeBtc=document.getElementById('feeBtc'),
+      feeUsd=document.getElementById('feeUsd'),confirmEst=document.getElementById('confirmEst'),
+      customVb=document.getElementById('customVb'),priceNote=document.getElementById('priceNote'),
+      liveDot=document.getElementById('liveDot'),liveLabel=document.getElementById('liveLabel'),
+      tiers=document.querySelectorAll('#tiers .tier'),presets=document.querySelectorAll('#sizePresets .preset'),
+      vbytes=141,btcPrice=null,liveRates=null;
+
+  function fmt(n){return n.toLocaleString('en-US')}
+  function estTime(rate){
+    if(!liveRates)return'~30 min';
+    if(rate>=liveRates.fast)return'~10 min (next block)';
+    if(rate>=liveRates.medium)return'~30 min';
+    if(rate>=liveRates.slow)return'~60 min';
+    if(rate>=liveRates.economy)return'a few hours';
+    return'may take very long';
+  }
+  function calc(){
+    var rate=parseInt(slider.value,10);rateVal.textContent=rate;
+    var sats=vbytes*rate;
+    feeSats.textContent=fmt(sats);
+    feeBtc.textContent=(sats/1e8).toFixed(8)+' BTC';
+    if(btcPrice){feeUsd.textContent='$'+(sats/1e8*btcPrice).toFixed(2);priceNote.textContent='at $'+fmt(Math.round(btcPrice))+'/BTC';}
+    else{feeUsd.textContent='$—';priceNote.textContent='(price offline — USD unavailable)';}
+    confirmEst.textContent='Estimated confirmation: '+estTime(rate);
+    tiers.forEach(function(t){t.classList.toggle('active',parseInt(t.dataset.rate||'0',10)===rate&&t.dataset.rate);});
+  }
+  slider.addEventListener('input',function(){tiers.forEach(function(t){t.classList.remove('active')});calc();});
+  tiers.forEach(function(t){t.addEventListener('click',function(){if(t.dataset.rate){slider.value=t.dataset.rate;calc();}});});
+  presets.forEach(function(p){p.addEventListener('click',function(){
+    presets.forEach(function(x){x.classList.remove('active')});p.classList.add('active');
+    customVb.value='';vbytes=parseInt(p.dataset.vb,10);calc();});});
+  customVb.addEventListener('input',function(){
+    var v=parseInt(customVb.value,10);
+    if(v>=50&&v<=100000){vbytes=v;presets.forEach(function(x){x.classList.remove('active')});calc();}});
+
+  function setLive(rates){
+    liveRates={fast:rates.fastestFee,medium:rates.halfHourFee,slow:rates.hourFee,economy:rates.economyFee};
+    var map={fast:'fastestFee',medium:'halfHourFee',slow:'hourFee',economy:'economyFee'};
+    tiers.forEach(function(t){
+      var key=map[t.dataset.tier],v=rates[key];
+      t.querySelector('.v').textContent=v;t.dataset.rate=v;
+      if(t.dataset.tier==='medium'){t.classList.add('active');slider.value=v;}
+    });
+    liveDot.classList.add('live');liveLabel.textContent='Live mempool data · updated just now';
+    calc();
+  }
+  function setManual(){
+    liveLabel.textContent='Live data unavailable — manual mode (drag the slider)';
+    tiers.forEach(function(t){t.querySelector('.v').textContent='–';});
+    calc();
+  }
+  fetch('https://mempool.space/api/v1/fees/recommended').then(function(r){return r.json()}).then(setLive).catch(setManual);
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+    .then(function(r){return r.json()}).then(function(j){if(j.bitcoin&&j.bitcoin.usd){btcPrice=j.bitcoin.usd;calc();}}).catch(function(){});
+  calc();
+})();
+</script>
+</body>
+</html>
